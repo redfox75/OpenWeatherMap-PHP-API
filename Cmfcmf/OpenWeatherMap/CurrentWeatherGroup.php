@@ -24,11 +24,11 @@ namespace Cmfcmf\OpenWeatherMap;
 class CurrentWeatherGroup implements \Iterator
 {
     /**
-     * An array of {@link CurrentWeather} objects.
+     * An array of {@link WeatherData} objects.
      *
      * @var CurrentWeather[]
      *
-     * @see CurrentWeather The CurrentWeather class.
+     * @see WeatherData The CurrentWeather class.
      */
     private $currentWeathers;
 

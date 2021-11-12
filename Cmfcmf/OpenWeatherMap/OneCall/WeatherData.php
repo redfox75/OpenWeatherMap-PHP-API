@@ -16,18 +16,21 @@
  * @see https://OpenWeatherMap.org/appid
  */
 
-namespace Cmfcmf\OpenWeatherMap\Util;
+namespace Cmfcmf\OpenWeatherMap\OneCall;
 
 /**
  * The weather class representing a weather object.
  */
-class Weather
+class WeatherData
 {
     /**
      * @var int The weather id.
      */
     public $id;
-
+    /**
+     * @var string The weather title.
+     */
+    public $main;
     /**
      * @var string The weather description.
      */
@@ -55,9 +58,10 @@ class Weather
      *
      * @internal
      */
-    public function __construct($id, $description, $icon)
+    public function __construct($id, $main, $description, $icon)
     {
         $this->id = (int)$id;
+        $this->main = (string)$main;
         $this->description = (string)$description;
         $this->icon = (string)$icon;
     }

@@ -19,6 +19,7 @@
 namespace Cmfcmf\OpenWeatherMap;
 
 use Cmfcmf\OpenWeatherMap\Util\City;
+use Cmfcmf\OpenWeatherMap\Util\FeelsLike;
 use Cmfcmf\OpenWeatherMap\Util\Sun;
 use Cmfcmf\OpenWeatherMap\Util\Temperature;
 use Cmfcmf\OpenWeatherMap\Util\Unit;
@@ -47,6 +48,11 @@ class CurrentWeather
     /**
      * @var Util\Unit
      */
+    public $feelsLike;
+
+    /**
+     * @var Util\Unit
+     */
     public $humidity;
 
     /**
@@ -63,6 +69,11 @@ class CurrentWeather
      * @var Util\Unit
      */
     public $clouds;
+
+    /**
+     * @var Util\Unit
+     */
+    public $visibility;
 
     /**
      * @var Util\Unit
@@ -92,8 +103,9 @@ class CurrentWeather
      *
      * @internal
      */
-    public function __construct($data, $units)
+    public function __construct($data, $units, $timezone = 'UTC')
     {
+
         // This is kind of a hack, because the units are missing in the document.
         if ($units == 'metric') {
             $windSpeedUnit = 'm/s';
@@ -101,18 +113,21 @@ class CurrentWeather
             $windSpeedUnit = 'mph';
         }
 
-        $utctz = new \DateTimeZone('UTC');
+    $utctz = new \DateTimeZone($timezone);
 
         if ($data instanceof \SimpleXMLElement) {
             $this->city = new City($data->city['id'], $data->city['name'], $data->city->coord['lat'], $data->city->coord['lon'], $data->city->country, null, $data->city->timezone);
             $this->temperature = new Temperature(new Unit($data->temperature['value'], $data->temperature['unit']), new Unit($data->temperature['min'], $data->temperature['unit']), new Unit($data->temperature['max'], $data->temperature['unit']));
+            $this->feelsLike = new Unit($data->feels_like['value'], $data->feels_like['unit']);
             $this->humidity = new Unit($data->humidity['value'], $data->humidity['unit']);
             $this->pressure = new Unit($data->pressure['value'], $data->pressure['unit']);
             $this->wind = new Wind(
                 new Unit($data->wind->speed['value'], $windSpeedUnit, $data->wind->speed['name']),
-                property_exists($data->wind, 'direction') ? new Unit($data->wind->direction['value'], $data->wind->direction['code'], $data->wind->direction['name']) : null
+                property_exists($data->wind, 'direction') ? new Unit($data->wind->direction['value'], $data->wind->direction['code'], $data->wind->direction['name']) : null,
+                property_exists($data->wind, 'gusts') ? new Unit($data->wind->gusts['value']) : null
             );
-            $this->clouds = new Unit($data->clouds['value'], null, $data->clouds['name']);
+            $this->clouds = new Unit($data->clouds['value'], '%', $data->clouds['name']);
+            $this->visibility = new Unit($data->visibility['value'],'m');
             $this->precipitation = new Unit($data->precipitation['value'], $data->precipitation['unit'], $data->precipitation['mode']);
             $this->sun = new Sun(new \DateTime($data->city->sun['rise'], $utctz), new \DateTime($data->city->sun['set'], $utctz));
             $this->weather = new Weather($data->weather['number'], $data->weather['value'], $data->weather['icon']);
@@ -120,18 +135,21 @@ class CurrentWeather
         } else {
             $this->city = new City($data->id, $data->name, $data->coord->lat, $data->coord->lon, $data->sys->country, null, $data->timezone);
             $this->temperature = new Temperature(new Unit($data->main->temp, $units), new Unit($data->main->temp_min, $units), new Unit($data->main->temp_max, $units));
+            $this->feelsLike = new Unit($data->main->feels_like,$units);
             $this->humidity = new Unit($data->main->humidity, '%');
             $this->pressure = new Unit($data->main->pressure, 'hPa');
             $this->wind = new Wind(
                 new Unit($data->wind->speed, $windSpeedUnit),
-                property_exists($data->wind, 'deg') && $data->wind->deg !== null ? new Unit($data->wind->deg) : null
+                property_exists($data->wind, 'deg') && $data->wind->deg !== null ? new Unit($data->wind->deg) : null,
+                property_exists($data->wind, 'gust') && $data->wind->gust !== null ? new Unit($data->wind->gust) : null
             );
             $this->clouds = new Unit($data->clouds->all, '%');
+            $this->visibility = new Unit($data->visibility,'m');
 
             // the rain field is not always present in the JSON response
             // and sometimes it contains the field '1h', sometimes the field '3h'
             $rain = isset($data->rain) ? (array) $data->rain : array();
-            $rainUnit = !empty($rain) ? key($rain) : '';
+            $rainUnit = !empty($rain) ? key($rain) : 'mm';
             $rainValue = !empty($rain) ? current($rain) : 0.0;
             $this->precipitation = new Unit($rainValue, $rainUnit);
 
@@ -139,5 +157,6 @@ class CurrentWeather
             $this->weather = new Weather($data->weather[0]->id, $data->weather[0]->description, $data->weather[0]->icon);
             $this->lastUpdate = \DateTime::createFromFormat('U', $data->dt, $utctz);
         }
+
     }
 }

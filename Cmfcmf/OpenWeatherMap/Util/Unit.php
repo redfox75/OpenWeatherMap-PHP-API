@@ -100,6 +100,17 @@ class Unit implements JsonSerializable
             return $this->unit;
         }
     }
+    /**
+     * Set the value's Unit.
+     *
+     * @param string $unit The unit of the value.
+     *
+     */
+    public function setUnit(string $unit = "")
+    {
+        return $this->unit = $unit;
+    }
+    /**
 
     /**
      * Get the value.
@@ -120,7 +131,16 @@ class Unit implements JsonSerializable
     {
         return $this->description;
     }
-
+    /**
+     * Get the value's description.
+     *
+     * @param string $description The description of the value.
+     *
+     */
+    public function setDescription(string $description = "")
+    {
+        return $this->description = $description;
+    }
     /**
      * Get the value's precision.
      *
